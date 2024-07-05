@@ -23,6 +23,15 @@ Route::get('/', function(){
    return redirect()->route('login');
 });
 
+// API
+Route::group([
+        'prefix' => "api/"
+    ], function (){
+        Route::post('/tokens/create', 'ApiController@getToken');
+        Route::middleware('auth:sanctum')->post('/tokens/revoke', 'ApiController@revokeToken');
+        Route::middleware('auth:sanctum')->post('/tokens/getUserData', 'ApiController@getUserData');
+    }
+);
 
 Route::group([
         'middleware' => 'auth',
