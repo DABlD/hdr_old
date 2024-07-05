@@ -43,5 +43,20 @@ class UserSeeder extends Seeder
             'email_verified_at' => now()->toDateTimeString(),
             'password' => '123456'
         ]);
+
+        User::create([
+            'username' => 'chanragmat',
+            'fname' => 'Christian',
+            'mname' => 'Lagunsad',
+            'lname' => 'Ragmat',
+            'role' => 'Admin',
+            'email' => 'chan.ragmat@gmail.com',
+            'birthday' => null,
+            'gender' => 'Male',
+            'address' => null,
+            'contact' => null,
+            'email_verified_at' => now()->toDateTimeString(),
+            'password' => '123456'
+        ]);
     }
 }
