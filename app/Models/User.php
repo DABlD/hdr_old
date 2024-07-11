@@ -22,7 +22,7 @@ class User extends Authenticatable
         'role', 'fname', 'mname', 
         'lname', 'email', 'birthday', 
         'gender', 'address', 'contact', 
-        'password', 'email_verified_at',
+        'password', 'civil_status'
         'username'
     ];
 
@@ -32,8 +32,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $hidden = [
-        'password',
-        'remember_token',
+        'password'
     ];
 
     /**
@@ -41,12 +40,9 @@ class User extends Authenticatable
      *
      * @var array<string, string>
      */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
 
     protected $dates = [
-        'created_at', 'updated_at', 'deleted_at', 'birthday', 'email_verified_at'
+        'created_at', 'updated_at', 'deleted_at', 'birthday'
     ];
 
     public function setPasswordAttribute($value) {
