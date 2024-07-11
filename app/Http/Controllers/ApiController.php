@@ -7,10 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
-use App\Models\User;
+use App\Models\{User, Patient};
 
 class ApiController extends Controller
 {
+    // AUTHENTICATION
+    // AUTHENTICATION
+    // AUTHENTICATION
+
     public function getToken(Request $request){
         $request->validate([
             'username' => 'required',
@@ -33,7 +37,9 @@ class ApiController extends Controller
         $request->user()->currentAccessToken()->delete();
     }
 
-    public function getUserData(Request $request){
-        return $request->user();
+    public function unauthenticated(Request $request){
+        return [
+            "message" => "Unauthenticated."
+        ];
     }
 }

@@ -3,95 +3,196 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User;
-use DB;
-use Auth;
+use App\Models\{User, Patient};
 
 class UserController extends Controller
 {
-    public function __construct(){
-        $this->table = "users";
-    }
+    public function createUser(Request $req){
+        $user = new User();
+        $user->username = $req->username;
+        $user->role = $req->role;
+        $user->fname = $req->fname;
+        $user->mname = $req->mname;
+        $user->lname = $req->lname;
+        $user->suffix = $req->suffix;
+        $user->gender = $req->gender;
+        $user->birthday = $req->birthday;
+        $user->civil_status = $req->civil_status;
+        $user->address = $req->address;
+        $user->email = $req->email;
+        $user->contact = $req->contact;
+        $user->nationality = $req->nationality;
+        $user->religion = $req->religion;
+        $user->avatar = $req->avatar;
+        $user->password = $req->password;
 
-    public function get(Request $req){
-        $array = DB::table($this->table)->select($req->select);
+        foreach (["email", "username"] as $col) {
+            $flag = User::where($col, '=', $req->$col)->where('id', '!=', $user->id)->count();
 
-        // IF HAS SORT PARAMETER $ORDER
-        if($req->order){
-            $array = $array->orderBy($req->order[0], $req->order[1]);
-        }
-
-        // IF HAS WHERE
-        if($req->where){
-            $array = $array->where($req->where[0], isset($req->where[2]) ? $req->where[1] : "=", $req->where[2] ?? $req->where[1]);
-        }
-
-        // IF HAS WHERE2
-        if($req->where2){
-            $array = $array->where($req->where2[0], isset($req->where2[2]) ? $req->where2[1] : "=", $req->where2[2] ?? $req->where2[1]);
-        }
-
-        // IF HAS JOIN
-        if($req->join){
-            $alias = substr($req->join, 1);
-            $array = $array->join("$req->join as $alias", "$alias.fid", '=', "$this->table.id");
-        }
-
-        $array = $array->get();
-
-        // IF HAS LOAD
-        if($array->count() && $req->load){
-            foreach($req->load as $table){
-                $array->load($table);
+            if($flag){
+                return [
+                    "status" => "Error",
+                    "message" => "$col already exists",
+                    "data" => $user
+                ];
             }
         }
 
-        // IF HAS GROUP
-        if($req->group){
-            $array = $array->groupBy($req->group);
+        try {
+            $user->save();
+
+            if($user->role == "Patient"){
+                $patient = new Patient();
+                $patient->user_id = $user->id;
+                $patient->patient_id = $req->patient_id;
+                $patient->hmo_provider = $req->hmo_provider;
+                $patient->hmo_number = $req->hmo_number;
+                $patient->save();
+                
+                $user->load('patient');
+
+                return [
+                    "status" => "Success",
+                    "message" => "Patient successfully created",
+                    "data" => $user
+                ];
+            }
+            else{
+                return [
+                    "status" => "Success",
+                    "message" => "User successfully created",
+                    "data" => $user
+                ];
+            }
+
+        } catch (Exception $e) {
+            return [
+                "status" => "Error",
+                "message" => $e->errorMessage()
+            ];
         }
-
-        echo json_encode($array);
     }
 
-    public function store(Request $req){
-        $data = new User();
-        $data->username = $req->username;
-        $data->fname = $req->fname;
-        $data->mname = $req->mname;
-        $data->lname = $req->lname;
-        $data->role = $req->role;
-        $data->email = $req->email;
-        $data->birthday = $req->birthday;
-        $data->gender = $req->gender;
-        $data->address = $req->address;
-        $data->contact = $req->contact;
-        $data->password = $req->password;
-
-        echo $data->save();
-    }
-
-    public function update(Request $req){
-        echo DB::table($this->table)->where('id', $req->id)->update($req->except(['id', '_token']));
-    }
-
-    public function updatePassword(Request $req){
+    public function getUser(Request $req){
         $user = User::find($req->id);
-        $user->password = $req->password;
-        $user->save();
+
+        if($user){
+            if($user->role == "Patient"){
+                $user->load('patient');
+            }
+
+            return [
+                "status" => "Success",
+                "data" => $user
+            ];
+        }
+        else{
+            return [
+                "status" => "Error",
+                "message" => "Invalid ID"
+            ];
+        }
     }
 
-    public function delete(Request $req){
-        User::find($req->id)->delete();
+    public function updateUser(Request $req){
+        $user = User::find($req->id);
+
+        if($user){
+            // UPDATE COLUMNS OF ALL PASSED ATTRIBUTE ONLY
+            $columns = $user->getFillable();
+
+            foreach($columns as $col){
+                if(in_array($col, ["username", "email"])){
+                    if($req->$col != $user->$col){
+                        // CHECK IF DUPLICATE
+                        $flag = User::where($col, '=', $req->$col)->where('id', '!=', $user->id)->count();
+
+                        if($flag){
+                            return [
+                                "status" => "Error",
+                                "message" => "$col already exists",
+                                "data" => $user
+                            ];
+                        }
+                        else{
+                            $user->$col = $req->$col;
+                        }
+                    }
+                }
+                elseif(isset($req->$col)){
+                    $user->$col = $req->$col;
+                }
+            }
+
+            try {
+                $user->save();
+
+                if($user->role == "Patient"){
+                    $user->load('patient');
+
+                    $columns = $user->patient->getFillable();
+
+                    foreach($columns as $col){
+                        if(isset($req->$col)){
+                            $user->patient->$col = $req->$col;
+                        }
+                    }
+
+                    return [
+                        "status" => "Success",
+                        "message" => "Patient details successfully updated",
+                        "data" => $user
+                    ];
+                }
+                else{
+                    return [
+                        "status" => "Success",
+                        "message" => "User details successfully updated",
+                        "data" => $user
+                    ];
+                }
+
+
+            } catch (Exception $e) {
+                return [
+                    "status" => "Error",
+                    "message" => $e->errorMessage()
+                ];
+            }
+        }
+        else{
+            return [
+                "status" => "Error",
+                "message" => "Invalid ID"
+            ];
+        }
     }
 
-    public function index(){
-        return $this->_view('index', [
-            'title' => ucfirst($this->table)
-        ]);
-    }
+    public function deleteUser(Request $req){
+        $user = User::find($req->id);
 
-    private function _view($view, $data = array()){
-        return view("$this->table.$view", $data);
+        if($user){
+            try {
+                $user->delete();
+
+                return [
+                    "status" => "Success",
+                    "message" => "User deleted",
+                    "data" => $user
+                ];
+
+            } catch (Exception $e) {
+                return [
+                    "status" => "Error",
+                    "message" => $e->errorMessage()
+                ];
+            }
+        }
+        else{
+            return [
+                "status" => "Error",
+                "message" => "Invalid ID"
+            ];
+        }
     }
 }

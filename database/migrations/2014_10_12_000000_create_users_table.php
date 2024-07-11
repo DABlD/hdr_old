@@ -35,7 +35,7 @@ class CreateUsersTable extends Migration
             $table->string('nationality')->nullable();
             $table->string('religion')->nullable();
 
-            $table->string('avatar')->default('images/default_avatar.png');
+            $table->string('avatar')->nullable()->default('images/default_avatar.png');
             $table->string('password');
 
             $table->timestamps();

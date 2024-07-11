@@ -19,81 +19,28 @@ use Illuminate\Support\Facades\Route;
 //     return view('welcome');
 // });
 
+
 Route::get('/', function(){
-   return redirect()->route('login');
+   echo "???";
 });
+
+Route::get('/test', 'TestController@test');
 
 // API
 Route::group([
         'prefix' => "api/"
     ], function (){
+        // AUTH
         Route::post('/tokens/create', 'ApiController@getToken');
+        Route::get('/unauthenticated', 'ApiController@unauthenticated')->name('unauthenticated');
         Route::middleware('auth:sanctum')->post('/tokens/revoke', 'ApiController@revokeToken');
-        Route::middleware('auth:sanctum')->post('/tokens/getUserData', 'ApiController@getUserData');
+
+        // USERS
+        Route::middleware('auth:sanctum')->get('/users/get', 'UserController@getUser');
+        Route::middleware('auth:sanctum')->post('/users/create', 'UserController@createUser');
+        Route::middleware('auth:sanctum')->post('/users/update', 'UserController@updateUser');
+        Route::middleware('auth:sanctum')->post('/users/delete', 'UserController@deleteUser');
     }
 );
 
-Route::group([
-        'middleware' => 'auth',
-    ], function() {
-        Route::get('/', "DashboardController@index")->name('dashboard');
-
-
-        Route::get('/', 'DashboardController@index')
-            ->defaults('sidebar', 1)
-            ->defaults('icon', 'fas fa-list')
-            ->defaults('name', 'Dashboard')
-            ->defaults('roles', array('Admin'))
-            ->name('dashboard')
-            ->defaults('href', '/');
-
-        // USER ROUTES
-        $cname = "user";
-        Route::group([
-                'as' => "$cname.",
-                'prefix' => "$cname/"
-            ], function () use($cname){
-
-                Route::get("/", ucfirst($cname) . "Controller@index")
-                    ->defaults("sidebar", 1)
-                    ->defaults("icon", "fas fa-users")
-                    ->defaults("name", ucfirst($cname) . "s")
-                    ->defaults("roles", array("Super Admin", "Admin"))
-                    // ->defaults("group", "Settings")
-                    ->name($cname)
-                    ->defaults("href", "/$cname");
-
-                Route::get("get/", ucfirst($cname) . "Controller@get")->name('get');
-                Route::post("store/", ucfirst($cname) . "Controller@store")->name('store');
-                Route::post("restore/", ucfirst($cname) . "Controller@restore")->name('restore');
-                Route::post("delete/", ucfirst($cname) . "Controller@delete")->name('delete');
-                Route::post("update/", ucfirst($cname) . "Controller@update")->name('update');
-                Route::post("updatePassword/", ucfirst($cname) . "Controller@updatePassword")->name('updatePassword');
-            }
-        );
-
-        // THEME ROUTES
-        $cname = "theme";
-        Route::group([
-                'as' => "$cname.",
-                'prefix' => "$cname/"
-            ], function () use($cname){
-                Route::get("get/", ucfirst($cname) . "Controller@get")->name('get');
-                Route::post("update/", ucfirst($cname) . "Controller@update")->name('update');
-            }
-        );
-
-        // DATATABLES
-        $cname = "datatable";
-        Route::group([
-                'as' => "$cname.",
-                'prefix' => "$cname/"
-            ], function () use($cname){
-
-                Route::get("user", ucfirst($cname) . "Controller@user")->name('user');
-            }
-        );
-    }
-);
-
-require __DIR__.'/auth.php';
+// require __DIR__.'/auth.php';
